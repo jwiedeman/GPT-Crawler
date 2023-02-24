@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Links and Domains DB</title>
+  <style>
+    * {
+      background-color: #333;
+      color: #fff;
+      font-family: "Product Sans", sans-serif;
+    }
+
+    h1 {
+      font-family: "Product Sans", sans-serif;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th,
+    td {
+      border: 1px solid grey;
+      padding: 5px;
+      text-align: center;
+      font-family: "Product Sans", sans-serif;
+    }
+
+    th {
+      font-family: "Product Sans", sans-serif;
+      letter-spacing: 2px;
+    }
+
+    td {
+      letter-spacing: 1px;
+    }
+
+    tfoot th {
+      text-align: right;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Links and Domains</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Stat</th>
+        <th>Value</th>
+        <th>Average Velocity / s</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Total Links:</td>
+        <td id="totalLinks"></td>
+        <td id="totalLinksRate"></td>
+      </tr>
+      <tr>
+        <td>Total Domains:</td>
+        <td id="totalDomains"></td>
+        <td id="totalDomainsRate"></td>
+      </tr>
+      <tr>
+        <td>Total Unvisited Links:</td>
+        <td id="totalUnvisitedLinks"></td>
+        <td id="totalUnvisitedLinksRate"></td>
+      </tr>
+      <tr>
+        <td>Total Unvisited Domains:</td>
+        <td id="totalUnvisitedDomains"></td>
+        <td id="totalUnvisitedDomainsRate"></td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+<script>
+  let data = [];
+  const interval = 1000; // check API every 5 seconds
+  const historyLength = 15; // track the past 15 seconds (15 intervals)
+
+  function f() {
+    fetch('http://127.0.0.1:3001/api/links')
+      .then(r => r.json())
+      .then(d => {
+        // Add new data to history array
+        data.push(d);
+        if (data.length > historyLength) {
+          // Remove oldest data from history array
+          data.shift();
+        }
+
+        // Calculate total change over the history period for each value
+        let totalLinkChange = 0;
+        let totalDomainChange = 0;
+        let totalUnvisitedLinkChange = 0;
+        let totalUnvisitedDomainChange = 0;
+        for (let i = 1; i < data.length; i++) {
+          const prev = data[i - 1];
+          const current = data[i];
+          totalLinkChange += current.totalLinks - prev.totalLinks;
+          totalDomainChange += current.totalDomains - prev.totalDomains;
+          totalUnvisitedLinkChange += current.totalUnvisitedLinks - prev.totalUnvisitedLinks;
+          totalUnvisitedDomainChange += current.totalUnvisitedDomains - prev.totalUnvisitedDomains;
+        }
+
+        // Calculate rate of change for each value
+        const linkRate = Math.trunc(totalLinkChange / (historyLength * interval / 1000));
+        const domainRate = Math.trunc(totalDomainChange / (historyLength * interval / 1000));
+        const unvisitedLinkRate = Math.trunc(totalUnvisitedLinkChange / (historyLength * interval / 1000));
+        const unvisitedDomainRate = Math.trunc(totalUnvisitedDomainChange / (historyLength * interval / 1000));
+
+        // Update DOM with data and rate of change
+        // Update DOM with data and rate of change
+        const c = data[data.length - 1];
+        document.getElementById('totalLinks').textContent = c.totalLinks.toLocaleString();
+        document.getElementById('totalDomains').textContent = c.totalDomains.toLocaleString();
+        document.getElementById('totalUnvisitedLinks').textContent = c.totalUnvisitedLinks.toLocaleString();
+        document.getElementById('totalUnvisitedDomains').textContent = c.totalUnvisitedDomains.toLocaleString();
+        document.getElementById('totalLinksRate').textContent = linkRate.toLocaleString();
+        document.getElementById('totalLinksRate').style.backgroundColor = linkRate < 0 ? 'salmon' : linkRate > .5 ?
+          'lightgreen' : null;
+        document.getElementById('totalLinksRate').style.color = (linkRate < 0 || linkRate > .5) ? 'black' : 'white';
+        document.getElementById('totalDomainsRate').textContent = domainRate.toLocaleString();
+        document.getElementById('totalDomainsRate').style.backgroundColor = domainRate < 0 ? 'salmon' : domainRate >
+          .5 ? 'lightgreen' : null;
+        document.getElementById('totalDomainsRate').style.color = (domainRate < 0 || domainRate > .5) ? 'black' :
+          'white';
+        document.getElementById('totalUnvisitedLinksRate').textContent = unvisitedLinkRate.toLocaleString();
+        document.getElementById('totalUnvisitedLinksRate').style.backgroundColor = unvisitedLinkRate < 0 ? 'salmon' :
+          unvisitedLinkRate > .5 ? 'lightgreen' : null;
+        document.getElementById('totalUnvisitedLinksRate').style.color = (unvisitedLinkRate < 0 || unvisitedLinkRate >
+          .5) ? 'black' : 'white';
+        document.getElementById('totalUnvisitedDomainsRate').textContent = unvisitedDomainRate.toLocaleString() / 5;
+        document.getElementById('totalUnvisitedDomainsRate').style.backgroundColor = unvisitedDomainRate < 0 ?
+          'salmon' : unvisitedDomainRate > .5 ? 'lightgreen' : null;
+        document.getElementById('totalUnvisitedDomainsRate').style.color = (unvisitedDomainRate < 0 ||
+          unvisitedDomainRate > .5) ? 'black' : 'white';
+
+      })
+      .catch(error => console.error(error));
+  }
+
+  f();
+  setInterval(f, interval);
+</script>
+
+
+</html>
